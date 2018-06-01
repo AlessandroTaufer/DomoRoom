@@ -1,2 +1,2 @@
 # DomoRoom
-Home automation
+Home automation - Developing
