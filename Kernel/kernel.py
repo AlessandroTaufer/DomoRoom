@@ -10,7 +10,7 @@ import TelegramManager.telegram_manager
 class Kernel:
     def __init__(self):
         self.init_logging()
-        self.telegram_manager = TelegramManager(self)
+        self.telegram_manager = TelegramManager.telegram_manager.TelegramManager(self)
         self.database_manager = None
         self.remote_devices = None
         self.data_mining = None
@@ -22,3 +22,7 @@ class Kernel:
     def init_logging():  # Initialize console logging
         logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         return
+
+
+if __name__ == "__main__":
+    Kernel()

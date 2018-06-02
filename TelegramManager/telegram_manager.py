@@ -17,6 +17,7 @@ class TelegramManager:
         self.allowed_chats = [116360988]  # Chats allowed to use the bot
         self.bot = None  # Telegram bot instance
         self.update_id = None  # Id of the different updates
+        self.logger = logging.getLogger("telegram_manager")
         # TODO Load the bot tag and the allowed chats from the database
         self.bot_tag = "560682687:AAGHYh7rLv43Og-Mvyejo-qNeJIP_zHs4FY"  # Tag of the current bot
 
@@ -24,21 +25,22 @@ class TelegramManager:
         self.attach_listener()
 
     def load_data(self):  # Loads data from a file
-        logging.debug("Telegram Manager loading data from file")
+        self.logger.debug("Telegram Manager loading data from file")
         self.parent.database_manager.load()
         pass    # TODO implement method
 
     def attach_listener(self):  # Initialize and attach a telegram updates listener
         self.bot = telegram.Bot(self.bot_tag)
-        logging.debug(self.bot)
+        self.logger.debug(self.bot)
+        self.broadcast_message("Bot is now online")
         if self.bot is None:
-            logging.error("Failed to initialize telegram bot " + str(self.__class__))
+            self.logger.error("Failed to initialize telegram bot " + str(self.__class__))
             exit(1)
         try:
             self.update_id = self.bot.get_updates()[0].update_id
         except IndexError:
             self.update_id = None
-            logging.warning("Update index error " + str(self.__class__))
+            self.logger.warning("Update index error " + str(self.__class__))
         Thread(target=self.updates_listener, args=()).start()
 
     def updates_listener(self):  # Listen from telegram updates
@@ -52,28 +54,37 @@ class TelegramManager:
 
             except NetworkError:  # An network error has occurred
                 time.sleep(1)
-                logging.warning("Network error " + str(self.__class__))
+                self.logger.warning("Network error " + str(self.__class__))
             except Unauthorized:  # The user has removed or blocked the bot.
                 self.update_id += 1
-                logging.warning("Unauthorized access " + str(self.__class__))
+                self.logger.warning("Unauthorized access " + str(self.__class__))
 
     def on_message(self, update, extra_function=None):  # Verify and elaborate the received message
         received_text = update.message.text
         current_chat_id = update.message.chat_id
         if current_chat_id in self.allowed_chats:
-            logging.info("Received message:" + received_text)
+            self.logger.info("Received message:" + received_text)
             update.message.reply_text(received_text)
         else:
             update.message.reply_text("You are not allowed to use this bot")
-            logging.warning("Received unauthorized message from: " + str(self.bot.get_chat(update.message.chat_id)))
-            logging.warning("unauthorized message content: " + received_text)
+            self.logger.warning("Received unauthorized message from: " + str(self.bot.get_chat(update.message.chat_id)))
+            self.logger.warning("unauthorized message content: " + received_text)
         try:
             extra_function(update.message)
         except TypeError:
-            logging.debug("extra function is None in " + str(self.__class__))
+            self.logger.debug("extra function is None in " + str(self.__class__))
+
+    def send_message(self, chat_id, text):  # Send a message to the given chat
+        try:
+            self.bot.sendMessage(chat_id, text)
+        except:
+            self.logger.warning("Failed to send message to the current chat " + str(chat_id))
+
+    def broadcast_message(self, text):  # Broadcast a message to all the allowed chats
+        for chat in self.allowed_chats:
+            self.send_message(chat, text)
 
 
 if __name__ == "__main__":
-    #logging.getLogger("telegram_manager").addHandler(logging.NullHandler())
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     TelegramManager(None)
