@@ -5,13 +5,17 @@
 #
 import logging
 import TelegramManager.telegram_manager
+import database_manager
+
+# TODO method to init the domoRoom at the first access
 
 
 class Kernel:
     def __init__(self):
         self.init_logging()
+        key = raw_input("Insert the key: ")
+        self.database_manager = database_manager.DatabaseManager(key)
         self.telegram_manager = TelegramManager.telegram_manager.TelegramManager(self)
-        self.database_manager = None
         self.remote_devices = None
         self.data_mining = None
         self.integrity_system = None

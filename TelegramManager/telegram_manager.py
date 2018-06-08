@@ -14,20 +14,21 @@ class TelegramManager:
 
     def __init__(self, parent):
         self.parent = parent  # Class parent
-        self.allowed_chats = [116360988]  # Chats allowed to use the bot
+        self.allowed_chats = []  # Chats allowed to use the bot
         self.bot = None  # Telegram bot instance
         self.update_id = None  # Id of the different updates
-        self.logger = logging.getLogger("telegram_manager")
-        # TODO Load the bot tag and the allowed chats from the database
-        self.bot_tag = "560682687:AAGHYh7rLv43Og-Mvyejo-qNeJIP_zHs4FY"  # Tag of the current bot
+        self.logger = logging.getLogger("DomoRoom-telegram_manager")  # Default logger
+        self.bot_tag = None  # Tag of the current bot
 
-        # self.load_data()
+        self.load_data()
         self.attach_listener()
 
     def load_data(self):  # Loads data from a file
         self.logger.debug("Telegram Manager loading data from file")
-        self.parent.database_manager.load()
-        pass    # TODO implement method
+        self.bot_tag = self.parent.database_manager.decrypt(self.parent.database_manager.read_line("telegram", 0))
+        chats = self.parent.database_manager.decrypt(self.parent.database_manager.read_line("telegram", 1))
+        self.allowed_chats = chats.split(",")
+        pass
 
     def attach_listener(self):  # Initialize and attach a telegram updates listener
         self.bot = telegram.Bot(self.bot_tag)
@@ -54,25 +55,24 @@ class TelegramManager:
 
             except NetworkError:  # An network error has occurred
                 time.sleep(1)
-                self.logger.warning("Network error " + str(self.__class__))
+                self.logger.warning("Network error ")
             except Unauthorized:  # The user has removed or blocked the bot.
                 self.update_id += 1
-                self.logger.warning("Unauthorized access " + str(self.__class__))
 
     def on_message(self, update, extra_function=None):  # Verify and elaborate the received message
         received_text = update.message.text
         current_chat_id = update.message.chat_id
         if current_chat_id in self.allowed_chats:
             self.logger.info("Received message:" + received_text)
-            update.message.reply_text(received_text)
+            update.message.reply_text("Message Received")
         else:
             update.message.reply_text("You are not allowed to use this bot")
             self.logger.warning("Received unauthorized message from: " + str(self.bot.get_chat(update.message.chat_id)))
-            self.logger.warning("unauthorized message content: " + received_text)
+            self.logger.warning("unauthorized message content: " + str(received_text))
         try:
             extra_function(update.message)
         except TypeError:
-            self.logger.debug("extra function is None in " + str(self.__class__))
+            self.logger.debug("extra function is None ")
 
     def send_message(self, chat_id, text):  # Send a message to the given chat
         try:
@@ -87,4 +87,4 @@ class TelegramManager:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    TelegramManager(None)
+    t = TelegramManager(None)
