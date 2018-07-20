@@ -19,7 +19,7 @@ class DatabaseManager:
 
     def init_encryptor(self, key):  # Initialize the encryptor
         self.logger.debug("Initializing encryptor")
-        initialization_vector = 'This is an IV456'  # TODO Create it randomly  #  encryptor's initialization vector
+        initialization_vector = 'This is an IV456'  # TODO Create it randomly
         encryptor = AES.new(key, AES.MODE_CBC, initialization_vector)  # File encryptor
         return encryptor
 
@@ -36,7 +36,7 @@ class DatabaseManager:
         encryptor = self.init_encryptor(self.key)
         return encryptor.encrypt(text)
 
-    def decrypt(self, encoded):  # Decrypt a string
+    def decrypt(self, encoded):  # Decrypt a string  
         encryptor = self.init_encryptor(self.key)
         txt = encryptor.decrypt(encoded)
         counter = len(encoded)-1
@@ -44,15 +44,18 @@ class DatabaseManager:
             counter -= 1
         return txt[:counter+1]
 
-    def write(self, file_name, data, mode="w"):  # Write data in a file
+    def write(self, file_name, data, encrypted=True, mode="w"):  # Write data in a file
         if file_name in self.file_names.keys():
             file_name = self.file_names[file_name]
         else:
             self.logger.warning("File name is not in the class dictionary")
+        if encrypted:
+            data = self.encrypt(data)
+
         with open(file_name, mode) as f:
             f.write(data)
 
-    def read(self, file_name):  # Get data from a file
+    def read(self, file_name, decrypt=True):  # Get data from a file
         if file_name in self.file_names.keys():
             file_name = self.file_names[file_name]
         else:
@@ -60,20 +63,22 @@ class DatabaseManager:
         data = ""
         with open(file_name, "r") as f:
             data = f.read()
+        if decrypt:
+            data = self.decrypt(data)
         return data
 
-    def write_line(self, file_name, data, line):  # Write data on a specified file line
-        txt = [e + "\n" for e in self.read(file_name).split("\n")]
-        if len(txt) < line:
-            txt += ["\n" for k in range(line - len(txt) +1)]
-        print(txt)
-        txt[line] = data + "\n" if (data[-1] != "\n") else ""
+    def write_line(self, file_name, data, line, encrypt=True):  # Write data on a specified file line
+        txt = [e + "\n" for e in self.read(file_name, encrypt).split("\n")]
+        if len(txt) < line + 1:
+            txt += ["\n" for k in range(line - len(txt) + 1)]  # Add missing lines
+            self.logger.debug("Added lines on file")
+        txt[line] = data  # ("\n" if (data[-1] != "\n" and len(txt) != line + 1) else "")
 
         txt = "".join(txt)
-        self.write(file_name, txt)
+        self.write(file_name, txt, encrypt)
 
-    def read_line(self, file_name, line): # Read a specific file line
-        txt = self.read(file_name).split("\n")
+    def read_line(self, file_name, line, decrypt=True):  # Read a specific file line
+        txt = self.read(file_name, decrypt).split("\n")
         if len(txt) <= line:
             self.logger.error("Invalid line number")
             return None
@@ -81,5 +86,7 @@ class DatabaseManager:
 
 
 if __name__ == "__main__":
-    d = DatabaseManager("database_key")
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    manager = DatabaseManager("database_key")
+
 

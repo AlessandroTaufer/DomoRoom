@@ -19,15 +19,22 @@ class TelegramManager:
         self.update_id = None  # Id of the different updates
         self.logger = logging.getLogger("DomoRoom-telegram_manager")  # Default logger
         self.bot_tag = None  # Tag of the current bot
+        self.enabled = True  # update listener status
 
         self.load_data()
         self.attach_listener()
+        self.logger.error("Debug logger")
 
     def load_data(self):  # Loads data from a file
         self.logger.debug("Telegram Manager loading data from file")
-        self.bot_tag = self.parent.database_manager.decrypt(self.parent.database_manager.read_line("telegram", 0))
-        chats = self.parent.database_manager.decrypt(self.parent.database_manager.read_line("telegram", 1))
-        self.allowed_chats = chats.split(",")
+        if self.parent.database_manager is None:
+            self.logger.error("Could not load data, database manager is None")
+        self.bot_tag = self.parent.database_manager.read_line("telegram", 0)
+        chats = self.parent.database_manager.read_line("telegram", 1)
+        if chats is not None:
+            chats = chats.split(",")
+            self.allowed_chats = [int(chat) for chat in chats]
+        self.logger.debug("Allowed chats " + str(self.allowed_chats))
         pass
 
     def attach_listener(self):  # Initialize and attach a telegram updates listener
@@ -45,7 +52,7 @@ class TelegramManager:
         Thread(target=self.updates_listener, args=()).start()
 
     def updates_listener(self):  # Listen from telegram updates
-        while True:
+        while self.enabled:
             try:
                 for update in self.bot.get_updates(offset=self.update_id, timeout=10):
                     self.update_id = update.update_id + 1
@@ -62,8 +69,10 @@ class TelegramManager:
     def on_message(self, update, extra_function=None):  # Verify and elaborate the received message
         received_text = update.message.text
         current_chat_id = update.message.chat_id
+        self.logger.debug("message chat id " + str(current_chat_id))
         if current_chat_id in self.allowed_chats:
             self.logger.info("Received message:" + received_text)
+            # self.parent.control_panel.digest_command(received_text)  # TODO digest properly telegram texts
             update.message.reply_text("Message Received")
         else:
             update.message.reply_text("You are not allowed to use this bot")
@@ -83,6 +92,34 @@ class TelegramManager:
     def broadcast_message(self, text):  # Broadcast a message to all the allowed chats
         for chat in self.allowed_chats:
             self.send_message(chat, text)
+
+    def add_allowed_chat(self, chat_id):  # Add a chat to the telegram allowed chats list
+        self.logger.info("Adding chat: " + str(chat_id))
+        self.allowed_chats.append(chat_id)
+        self.send_message(chat_id, "You have been added to the allowed chats")
+        self.logger.debug("Current allowed chats: " + str(self.allowed_chats))
+
+    def remove_allowed_chat(self, pos):  # Remove a chat from the telegram allowed chats list
+        try:
+            pos = int(pos)
+            if 0 <= pos < len(self.allowed_chats):
+                tmp_chat = self.allowed_chats.pop(pos)
+                self.logger.info("Removed chat: " + str(tmp_chat))
+                return True
+            elif len(str(pos)) == 8:
+                self.allowed_chats.remove(pos)
+                return True
+        except (ValueError, IndexError, TypeError):
+            logging.warning("Failed to remove chat: invalid parameter " + str(pos))
+        return False
+
+    def save_data(self):  # Save the data on file
+        chats = ""
+        for c in self.allowed_chats:
+            chats += str(c) + ","
+        chats = chats[:-1]
+        self.parent.database_manager.write_line("telegram", chats, 1)
+        self.logger.info("Saving telegram data")
 
 
 if __name__ == "__main__":
