@@ -59,7 +59,7 @@ class ControlPanel:
         elif keyword == "list":
             self.reply_to(source, str(self.parent.telegram_manager.allowed_chats))
         elif keyword == "poweroff":  # TODO check if it's working properly
-            self.parent.telegram_manager.broadcastMessage("Bot is currently offline")
+            self.parent.telegram_manager.broadcast_message("Bot is now offline")
             self.shut_down()
         else:
             self.reply_to(source, "Invalid input")
