@@ -45,7 +45,7 @@ class TelegramManager:
             self.logger.error("Failed to initialize telegram bot " + str(self.__class__))
             exit(1)
         try:
-            self.update_id = self.bot.get_updates()[0].update_id
+            self.update_id = self.bot.get_updates()[0].update_id + 1
         except IndexError:
             self.update_id = None
             self.logger.warning("Update index error " + str(self.__class__))
@@ -56,8 +56,7 @@ class TelegramManager:
             try:
                 for update in self.bot.get_updates(offset=self.update_id, timeout=10):
                     self.update_id = update.update_id + 1
-
-                    if update.message:  # your bot can receive updates without messages
+                    if update.message:
                         self.on_message(update)
 
             except NetworkError:  # An network error has occurred
@@ -72,8 +71,8 @@ class TelegramManager:
         self.logger.debug("message chat id " + str(current_chat_id))
         if current_chat_id in self.allowed_chats:
             self.logger.info("Received message:" + received_text)
-            # self.parent.control_panel.digest_command(received_text)  # TODO digest properly telegram texts
-            update.message.reply_text("Message Received")
+            self.parent.control_panel.digest_command(received_text, current_chat_id) # TODO digest properly telegram texts
+            # update.message.reply_text("Message Received")
         else:
             update.message.reply_text("You are not allowed to use this bot")
             self.logger.warning("Received unauthorized message from: " + str(self.bot.get_chat(update.message.chat_id)))

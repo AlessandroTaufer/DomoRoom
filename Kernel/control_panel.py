@@ -37,46 +37,65 @@ class ControlPanel:
     def main_menu(self):  # User interface
         while self.enabled:
             print("\n\n\t\t\t\tCONTROL PANEL\n")
-            print("a) add a chat to the allowed telegram chats list\n"
-                  "b) remove a chat from the allowed telegram chats list\n"
-                  "c) list all the allowed telegram chats\n"
-                  "d) exit")
+            print("add - add a chat to the allowed telegram chats list\n"
+                  "remove - remove a chat from the allowed telegram chats list\n"
+                  "list - list all the allowed telegram chats\n"
+                  "poweroff - exit")
             choice = raw_input()
             self.digest_command(choice)
 
-    def digest_command(self, command):  # execute the give command
+    def digest_command(self, command, source=0):  # Execute the given command
         self.logger.debug("Received command: " + str(command))
-        if command == 'a':
-            self.add_allowed_chat()
-        elif command == 'b':
-            self.remove_allowed_chat()
-        elif command == 'c':
-            print(self.parent.telegram_manager.allowed_chats)
-        elif command == 'd':  # TODO check if it's working properly
+        command = command.lower().split(" ")
+        if len(command) > 0:
+            keyword = command.pop(0)
+        else:
+            self.reply_to(source, "Empty command")
+            return
+        if keyword == "add":
+            self.reply_to(source, self.add_allowed_chat(command))
+        elif keyword == "remove":
+            self.reply_to(source, self.remove_allowed_chat(command))
+        elif keyword == "list":
+            self.reply_to(source, str(self.parent.telegram_manager.allowed_chats))
+        elif keyword == "poweroff":  # TODO check if it's working properly
+            self.parent.telegram_manager.broadcastMessage("Bot is currently offline")
             self.shut_down()
         else:
-            print ("Invalid input")
+            self.reply_to(source, "Invalid input")
 
-    def add_allowed_chat(self):  # Add a chat to the telegram allowed chats list
-        chat = raw_input("Insert the chat id: ")
+    def reply_to(self, target, message):  # Send a message to the given target
+        if target > 0:
+            self.parent.telegram_manager.send_message(target, message)
+        else:
+            print(message)
+
+    def add_allowed_chat(self, command):  # Add a chat to the telegram allowed chats list
+        if len(command) > 0:
+            chat = command.pop(0)
+        else:
+            chat = raw_input("Insert the chat id: ")
         if len(chat) >= 7:
             try:
                 chat = int(chat)
                 self.parent.telegram_manager.add_allowed_chat(chat)
-                print("Successfully added an allowed chat")
+                return "Successfully added to allowed chats"
             except ValueError:
                 self.logger.warning("Invalid chat id")
-                print ("Invalid input value")
+                return "Invalid input value"
         else:
-            self.logger.warning("Invalid chat id: different digit number")
-            print("Invalid input: there are not enough digits")
+            self.logger.warning("Invalid chat id: different digits number")
+            return "Invalid input: there are not enough digits"
 
-    def remove_allowed_chat(self):  # Remove a chat from the telegram allowed chats list
-        chat_pos = raw_input("Insert the chat position/id to remove: ")
-        if self.parent.telegram_manager.remove_allowed_chat(chat_pos):
-            print("Successfully removed an allowed chat")
+    def remove_allowed_chat(self, command):  # Remove a chat from the telegram allowed chats list
+        if len(command) > 0:
+            chat_pos = command.pop(0)
         else:
-            print("Invalid value")
+            chat_pos = raw_input("Insert the chat position/id to remove: ")
+        if self.parent.telegram_manager.remove_allowed_chat(chat_pos):
+            return "Successfully removed from allowed chats"
+        else:
+            return "Invalid value"
 
     def backup(self):  # Do a backup of all the program data
         self.parent.telegram_manager.save_data()
