@@ -6,13 +6,13 @@
 import logging
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
-
+from collections import OrderedDict
 
 class DatabaseManager:
 
     def __init__(self, key):
         self.logger = logging.getLogger("DomoRoom-database_manager")  # Default logger
-        self.file_names = {"telegram": "telegram.dr", "log": "log.dr"}  # Database file name
+        self.file_names = {"telegram": "telegram.dr", "log": "log.dr", "keywords": "keywords.dr"}  # Database file name
         self.key = SHA256.new(key).hexdigest()[:32]  # Encryption key
         self.filler_character = '~'  # Added at the end of the string
         self.logger.info("Successful initialized database manager")
@@ -78,11 +78,32 @@ class DatabaseManager:
         self.write(file_name, txt, encrypt)
 
     def read_line(self, file_name, line, decrypt=True):  # Read a specific file line
+        single_line = False
+        if not isinstance(line, list):
+            line = [line]
+            single_line = True
         txt = self.read(file_name, decrypt).split("\n")
-        if len(txt) <= line:
+        if len(txt) <= max(line):
             self.logger.error("Invalid line number")
             return None
-        return txt[line]
+        if single_line:
+            return txt[line[0]]
+        return [txt[pos] for pos in line]
+
+    def load_keywords(self):  # Loads the keywords set from a file
+        keywords = self.read("keywords", False).split("\n")
+        dictionary = OrderedDict()
+        for line in keywords:
+            tmp_list = line.split(",")
+            for i in range(len(tmp_list)):
+                if tmp_list[i][0] == " ":
+                    tmp_list[i] = tmp_list[i][1:]
+            try:
+                dictionary[tmp_list[0]] = {"name": tmp_list[1], "description": tmp_list[2]}
+            except IndexError:
+                self.logger.error("Invalid keywords file line")
+        self.logger.info("Successfully loaded keywords from file")
+        return dictionary
 
 
 if __name__ == "__main__":

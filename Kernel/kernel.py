@@ -8,6 +8,7 @@ import TelegramManager.telegram_manager
 import database_manager
 import control_panel
 # TODO method to init the domoRoom at the first access
+# TODO manage random errors (404)
 
 
 class Kernel:

@@ -6,6 +6,7 @@
 import logging
 import getpass
 import database_manager
+from collections import OrderedDict
 from threading import Thread
 
 
@@ -14,7 +15,7 @@ class ControlPanel:
         self.parent = parent  # Class parent
         self.logger = logging.getLogger("DomoRoom-telegram_manager")  # Default logger
         self.enabled = True  # Control panel status
-
+        self.keywords = self.parent.database_manager.load_keywords()  # List of all the commands keywords
         Thread(target=self.main_menu, args=()).start()
         print ("Enabled control panel")
         self.logger.info("Enabled control panel")
@@ -37,8 +38,8 @@ class ControlPanel:
     def main_menu(self):  # User interface
         while self.enabled:
             print("\n\n\t\t\t\tCONTROL PANEL\n")
-            print("add - add a chat to the allowed telegram chats list\n"
-                  "remove - remove a chat from the allowed telegram chats list\n"
+            print("add - add a chat to the 'allowed telegram chats list'\n" # TODO use keywords instead
+                  "remove - remove a chat from the 'allowed telegram chats list'\n"
                   "list - list all the allowed telegram chats\n"
                   "poweroff - exit")
             choice = raw_input()
@@ -52,13 +53,16 @@ class ControlPanel:
         else:
             self.reply_to(source, "Empty command")
             return
-        if keyword == "add":
+        if keyword == self.keywords.get("help").get("name"):
+            help = "HELP:\n" + "\n".join([e.get("name") + " - " + e.get("description") for e in self.keywords.values()])
+            self.reply_to(source, help)
+        elif keyword == self.keywords.get("add_chat").get("name"):
             self.reply_to(source, self.add_allowed_chat(command))
-        elif keyword == "remove":
+        elif keyword == self.keywords.get("remove_chat").get("name"):
             self.reply_to(source, self.remove_allowed_chat(command))
-        elif keyword == "list":
+        elif keyword == self.keywords.get("list_chats").get("name"):
             self.reply_to(source, str(self.parent.telegram_manager.allowed_chats))
-        elif keyword == "poweroff":  # TODO check if it's working properly
+        elif keyword == self.keywords.get("power_off").get("name"):  # TODO check if it's working properly
             self.parent.telegram_manager.broadcast_message("Bot is now offline")
             self.shut_down()
         else:
