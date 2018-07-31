@@ -12,8 +12,11 @@ import control_panel
 
 
 class Kernel:
-    def __init__(self):
-        self.init_logging('logfile')
+    def __init__(self, verbose):
+        logfile = "logfile"
+        if verbose:
+            logfile = ""
+        self.init_logging(logfile)
         key = raw_input("Insert the key: ")  # TODO verify & hide the key
         self.database_manager = database_manager.DatabaseManager(key)
         self.telegram_manager = TelegramManager.telegram_manager.TelegramManager(self)
@@ -37,4 +40,4 @@ class Kernel:
 
 
 if __name__ == "__main__":
-    Kernel()
+    Kernel(verbose=False)

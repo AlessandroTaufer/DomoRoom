@@ -8,6 +8,7 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from collections import OrderedDict
 
+
 class DatabaseManager:
 
     def __init__(self, key):

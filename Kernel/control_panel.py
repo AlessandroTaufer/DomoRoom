@@ -6,7 +6,8 @@
 import logging
 import getpass
 import database_manager
-from collections import OrderedDict
+import sys
+import select
 from threading import Thread
 
 
@@ -17,7 +18,6 @@ class ControlPanel:
         self.enabled = True  # Control panel status
         self.keywords = self.parent.database_manager.load_keywords()  # List of all the commands keywords
         Thread(target=self.main_menu, args=()).start()
-        print ("Enabled control panel")
         self.logger.info("Enabled control panel")
 
     @staticmethod
@@ -32,18 +32,27 @@ class ControlPanel:
             else:
                 print("Keys are not matching")
         print("Insert the telegram bot api token")
-        token = getpass.getpass("Token: ")
+        token = getpass.getpass("Token: ")  # TODO check if the token is working
         database_manager.DatabaseManager(key).write("telegram", token)
 
+    @staticmethod
+    def console_input(timeout=10):  # Get an input from the console
+        i, o, e = select.select([sys.stdin], [], [], timeout)
+
+        if i:
+            return sys.stdin.readline().strip()
+        else:
+            return None
+
     def main_menu(self):  # User interface
+        choice = ""
         while self.enabled:
-            print("\n\n\t\t\t\tCONTROL PANEL\n")
-            print("add - add a chat to the 'allowed telegram chats list'\n" # TODO use keywords instead
-                  "remove - remove a chat from the 'allowed telegram chats list'\n"
-                  "list - list all the allowed telegram chats\n"
-                  "poweroff - exit")
-            choice = raw_input()
-            self.digest_command(choice)
+            if choice is not None:
+                if choice != "":
+                    self.digest_command(choice)
+                print("\n\n\t\t\t\tCONTROL PANEL\n")
+                print(self.get_help())
+            choice = self.console_input(5)
 
     def digest_command(self, command, source=0):  # Execute the given command
         self.logger.debug("Received command: " + str(command))
@@ -54,7 +63,7 @@ class ControlPanel:
             self.reply_to(source, "Empty command")
             return
         if keyword == self.keywords.get("help").get("name"):
-            help = "HELP:\n" + "\n".join([e.get("name") + " - " + e.get("description") for e in self.keywords.values()])
+            help = "HELP:\n" + self.get_help()
             self.reply_to(source, help)
         elif keyword == self.keywords.get("add_chat").get("name"):
             self.reply_to(source, self.add_allowed_chat(command))
@@ -78,8 +87,9 @@ class ControlPanel:
         if len(command) > 0:
             chat = command.pop(0)
         else:
-            chat = raw_input("Insert the chat id: ")
-        if len(chat) >= 7:
+            print("Insert the chat id: ")
+            chat = self.console_input(20)
+        if chat is not None and len(chat) >= 7:
             try:
                 chat = int(chat)
                 self.parent.telegram_manager.add_allowed_chat(chat)
@@ -95,7 +105,8 @@ class ControlPanel:
         if len(command) > 0:
             chat_pos = command.pop(0)
         else:
-            chat_pos = raw_input("Insert the chat position/id to remove: ")
+            print("Insert the chat position/id to remove: ")
+            chat_pos = self.console_input(20)
         if self.parent.telegram_manager.remove_allowed_chat(chat_pos):
             return "Successfully removed from allowed chats"
         else:
@@ -104,6 +115,9 @@ class ControlPanel:
     def backup(self):  # Do a backup of all the program data
         self.parent.telegram_manager.save_data()
         self.logger.info("Backup completed")
+
+    def get_help(self):  # Returns a string containing all the commands
+        return "\n".join([e.get("name") + " - " + e.get("description") for e in self.keywords.values()])
 
     def shut_down(self):  # Shut down the whole program
         self.backup()
