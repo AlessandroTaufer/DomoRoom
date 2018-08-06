@@ -8,6 +8,7 @@ import getpass
 import database_manager
 import sys
 import select
+from routines import RoutinesManager
 from threading import Thread
 
 
@@ -36,7 +37,7 @@ class ControlPanel:
         database_manager.DatabaseManager(key).write("telegram", token)
 
     @staticmethod
-    def console_input(timeout=10):  # Get an input from the console
+    def console_input(timeout=20):  # Get an input from the console
         i, o, e = select.select([sys.stdin], [], [], timeout)
 
         if i:
@@ -71,7 +72,11 @@ class ControlPanel:
             self.reply_to(source, self.remove_allowed_chat(command))
         elif keyword == self.keywords.get("list_chats").get("name"):
             self.reply_to(source, str(self.parent.telegram_manager.allowed_chats))
-        elif keyword == self.keywords.get("power_off").get("name"):  # TODO check if it's working properly
+        elif keyword == self.keywords.get("telegram_reminder").get("name"):
+            self.reply_to(source, self.set_telegram_reminder(command))
+        elif keyword == self.keywords.get("list_routines").get("name"):
+            self.reply_to(source, str(self.parent.routines.routines_to_string()))
+        elif keyword == self.keywords.get("power_off").get("name"):
             self.parent.telegram_manager.broadcast_message("Bot is now offline")
             self.shut_down()
         else:
@@ -88,7 +93,7 @@ class ControlPanel:
             chat = command.pop(0)
         else:
             print("Insert the chat id: ")
-            chat = self.console_input(20)
+            chat = self.console_input()
         if chat is not None and len(chat) >= 7:
             try:
                 chat = int(chat)
@@ -106,11 +111,56 @@ class ControlPanel:
             chat_pos = command.pop(0)
         else:
             print("Insert the chat position/id to remove: ")
-            chat_pos = self.console_input(20)
+            chat_pos = self.console_input()
         if self.parent.telegram_manager.remove_allowed_chat(chat_pos):
             return "Successfully removed from allowed chats"
         else:
             return "Invalid value"
+
+    def set_telegram_reminder(self, command):  # Set a telegram reminder
+        if len(command) >= 4:
+            name = command.pop(0)
+            date = command.pop(0)
+            time = command.pop(0)
+            chat = command.pop(0)
+            message = " ".join(command)
+        else:
+            print("Insert the routine name")
+            name = self.console_input()
+            print("Insert the date: (format dd/mm/yy)")
+            date = self.console_input()
+            print("Insert the time: (format hh:mm:ss)")
+            time = self.console_input()
+            print ("Insert the message: ")
+            message = self.console_input()
+            print("Insert the address chat:  (return to broadcast)")
+            chat = self.console_input()
+            if chat == "":
+                chat = -1
+        try:
+            chat = int(chat)
+            date_time = self.datetime_format(date, time)
+            self.parent.routines.attach_telegram_alert_routine(name, message, chat, date_time)
+            self.logger.info("Reminder " + name + " set")
+            return "Successfully set the telegram reminder"
+        except:
+            self.logger.warning("An error has occurred while setting a reminder")
+        return "Invalid value"
+
+    @staticmethod
+    def datetime_format(date, time):  # Return a date time object from a date string
+        date = [int(d) for d in date.split("/")]
+        date.reverse()
+        if date[0] < 2000:
+            date[0] = 2000 + date[0]
+        if time is None or time is "":
+            time = []
+        else:
+            time = [int(d) for d in time.split(":")]
+        while len(time) < 4:
+            time.append(0)
+        param = date + time
+        return RoutinesManager.convert_to_datetime(*param)
 
     def backup(self):  # Do a backup of all the program data
         self.parent.telegram_manager.save_data()
@@ -123,6 +173,7 @@ class ControlPanel:
         self.backup()
         self.enabled = False
         self.parent.telegram_manager.enabled = False
+        self.parent.routines.enabled = False
         self.logger.info("Exiting program")
         self.parent.__del__()
 
