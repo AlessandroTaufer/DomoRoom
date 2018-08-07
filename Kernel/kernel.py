@@ -8,6 +8,7 @@ import TelegramManager.telegram_manager
 import database_manager
 import control_panel
 import routines
+import camera_manager
 # TODO method to init the domoRoom at the first access
 # TODO manage random errors (404)
 # TODO manage .dr and pyc
@@ -21,6 +22,7 @@ class Kernel:
         self.init_logging(logfile)
         key = raw_input("Insert the key: ")  # TODO verify & hide the key
         self.database_manager = database_manager.DatabaseManager(key)
+        self.camera_manager = camera_manager.CameraManager(self)
         self.telegram_manager = TelegramManager.telegram_manager.TelegramManager(self)
         self.control_panel = control_panel.ControlPanel(self)
         self.remote_devices = None

@@ -6,6 +6,7 @@
 import logging
 import telegram
 import time
+from cv2 import imwrite
 from telegram.error import NetworkError, Unauthorized
 from threading import Thread
 
@@ -71,7 +72,7 @@ class TelegramManager:
         self.logger.debug("message chat id " + str(current_chat_id))
         if current_chat_id in self.allowed_chats:
             self.logger.info("Received message:" + received_text)
-            self.parent.control_panel.digest_command(received_text, current_chat_id) # TODO digest properly telegram texts
+            self.parent.control_panel.digest_command(received_text, current_chat_id)
             # update.message.reply_text("Message Received")
         else:
             update.message.reply_text("You are not allowed to use this bot")
@@ -88,9 +89,29 @@ class TelegramManager:
         except:
             self.logger.warning("Failed to send message to the current chat " + str(chat_id))
 
+    def send_image(self, chat_id, image):  # Send an image to the given chat
+        try:
+            path = "imgs/tmp.jpg"
+            if not isinstance(image, basestring):
+                imwrite(path, image)
+            else:
+                path = image
+            image = open(path, "rb")
+            self.bot.send_photo(chat_id, image)
+            return True
+        except:
+            self.logger.warning("Failed to send photo to the current chat " + str(chat_id))
+        return False
+
     def broadcast_message(self, text):  # Broadcast a message to all the allowed chats
         for chat in self.allowed_chats:
             self.send_message(chat, text)
+        return True
+
+    def broadcast_image(self, image):  # Broadcast a message to all the allowed chats
+        for chat in self.allowed_chats:
+            self.send_image(chat, image)
+        return True
 
     def add_allowed_chat(self, chat_id):  # Add a chat to the telegram allowed chats list
         self.logger.info("Adding chat: " + str(chat_id))

@@ -76,6 +76,10 @@ class ControlPanel:
             self.reply_to(source, self.set_telegram_reminder(command))
         elif keyword == self.keywords.get("list_routines").get("name"):
             self.reply_to(source, str(self.parent.routines.routines_to_string()))
+        elif keyword == self.keywords.get("capture_image").get("name"):
+            self.reply_to(source, self.capture_image(command))
+        elif keyword == self.keywords.get("security_system").get("name"):
+            self.reply_to(source, self.security_system(command))
         elif keyword == self.keywords.get("power_off").get("name"):
             self.parent.telegram_manager.broadcast_message("Bot is now offline")
             self.shut_down()
@@ -162,6 +166,31 @@ class ControlPanel:
         param = date + time
         return RoutinesManager.convert_to_datetime(*param)
 
+    def capture_image(self, command):  # Capture an image an send it to the corresponding chat
+        if len(command) > 0:
+            chat_pos = command.pop(0)
+        else:
+            self.parent.telegram_manager.broadcast_image(self.parent.camera_manager.last_shot)
+            return "Successfully broadcasted picture"
+        if self.parent.telegram_manager.send_image(chat_pos, self.parent.camera_manager.last_shot):
+            return "Successfully sent picture"
+        else:
+            return "Invalid value"
+
+    def security_system(self, command):  # Enable / Disable the security system
+        if len(command) > 0:
+            status = command.pop(0)
+        else:
+            print("Turn on/OFF: ")
+            status = self.console_input()
+        status = status.lower() == "on"
+        if status:
+            self.parent.camera_manager.turn_on_motion_detection()
+            return "Security system enabled"
+        else:
+            self.parent.camera_manager.turn_off_motion_detection()
+            return "Security system disabled"
+
     def backup(self):  # Do a backup of all the program data
         self.parent.telegram_manager.save_data()
         self.logger.info("Backup completed")
@@ -174,6 +203,8 @@ class ControlPanel:
         self.enabled = False
         self.parent.telegram_manager.enabled = False
         self.parent.routines.enabled = False
+        self.parent.camera_manager.enabled = False
+        self.parent.camera_manager.turn_off_motion_detection()
         self.logger.info("Exiting program")
         self.parent.__del__()
 
