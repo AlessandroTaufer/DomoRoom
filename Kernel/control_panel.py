@@ -63,7 +63,12 @@ class ControlPanel:
         else:
             self.reply_to(source, "Empty command")
             return
-        if keyword == self.keywords.get("help").get("name"):
+        # TODO add ping command
+        if keyword == "addme" and source not in self.parent.telegram_manager.allowed_chats:  # TODO debug addme
+            warning_txt = "Chat '" + str(source) + "' requested to be enabled to use the bot"
+            self.broadcast_message(warning_txt)
+            self.reply_to(source, "Your request has been submitted")
+        elif keyword == self.keywords.get("help").get("name"):
             help = "HELP:\n" + self.get_help()
             self.reply_to(source, help)
         elif keyword == self.keywords.get("add_chat").get("name"):
@@ -85,6 +90,11 @@ class ControlPanel:
             self.shut_down()
         else:
             self.reply_to(source, "Invalid input")
+
+    def broadcast_message(self, text):  # Broadcast a message on console, telegram chats and logger
+        self.parent.telegram_manager.broadcast_message(text)
+        self.logger.info(text)
+        print(text)
 
     def reply_to(self, target, message):  # Send a message to the given target
         if target > 0:

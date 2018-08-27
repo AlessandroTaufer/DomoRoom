@@ -73,9 +73,10 @@ class TelegramManager:
         if current_chat_id in self.allowed_chats:
             self.logger.info("Received message:" + received_text)
             self.parent.control_panel.digest_command(received_text, current_chat_id)
-            # update.message.reply_text("Message Received")
         else:
-            update.message.reply_text("You are not allowed to use this bot")
+            if received_text == "addme":
+                self.parent.control_panel.digest_command(received_text, current_chat_id)
+            update.message.reply_text("This bot is classified, 'addme' to request the clearance")
             self.logger.warning("Received unauthorized message from: " + str(self.bot.get_chat(update.message.chat_id)))
             self.logger.warning("unauthorized message content: " + str(received_text))
         try:

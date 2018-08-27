@@ -9,6 +9,7 @@ import database_manager
 import control_panel
 import routines
 import camera_manager
+import os.path
 # TODO method to init the domoRoom at the first access
 # TODO manage random errors (404)
 # TODO manage .dr and pyc
