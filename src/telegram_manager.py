@@ -92,7 +92,7 @@ class TelegramManager:
 
     def send_image(self, chat_id, image):  # Send an image to the given chat
         try:
-            path = "imgs/tmp.jpg"
+            path = "../tmp/tmp.jpg"
             if not isinstance(image, basestring):
                 imwrite(path, image)
             else:

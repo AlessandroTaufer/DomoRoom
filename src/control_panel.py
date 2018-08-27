@@ -177,6 +177,7 @@ class ControlPanel:
         return RoutinesManager.convert_to_datetime(*param)
 
     def capture_image(self, command):  # Capture an image an send it to the corresponding chat
+        # TODO save a local copy in imgs folder
         if len(command) > 0:
             chat_pos = command.pop(0)
         else:

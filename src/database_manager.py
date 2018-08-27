@@ -13,6 +13,7 @@ class DatabaseManager:
 
     def __init__(self, key):
         self.logger = logging.getLogger("DomoRoom-database_manager")  # Default logger
+        self.file_path = "../resources/files/"
         self.file_names = {"telegram": "telegram.dr", "log": "log.dr", "keywords": "keywords.dr"}  # Database file name
         self.key = SHA256.new(key).hexdigest()[:32]  # Encryption key
         self.filler_character = '~'  # Added at the end of the string
@@ -47,7 +48,7 @@ class DatabaseManager:
 
     def write(self, file_name, data, encrypted=True, mode="w"):  # Write data in a file
         if file_name in self.file_names.keys():
-            file_name = self.file_names[file_name]
+            file_name = self.file_path + self.file_names[file_name]
         else:
             self.logger.warning("File name is not in the class dictionary")
         if encrypted:
@@ -58,7 +59,7 @@ class DatabaseManager:
 
     def read(self, file_name, decrypt=True):  # Get data from a file
         if file_name in self.file_names.keys():
-            file_name = self.file_names[file_name]
+            file_name = self.file_path + self.file_names[file_name]
         else:
             self.logger.warning("File name is not in the class dictionary")
         data = ""

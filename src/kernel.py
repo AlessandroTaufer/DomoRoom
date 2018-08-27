@@ -4,12 +4,13 @@
 #   Url: https://github.com/AlessandroTaufer
 #
 import logging
-import TelegramManager.telegram_manager
+import telegram_manager
 import database_manager
 import control_panel
 import routines
 import camera_manager
-import os.path
+
+
 # TODO method to init the domoRoom at the first access
 # TODO manage random errors (404)
 # TODO manage .dr and pyc
@@ -17,14 +18,14 @@ import os.path
 
 class Kernel:
     def __init__(self, verbose):
-        logfile = "logfile"
+        logfile = "../resources/files/logfile"
         if verbose:
             logfile = ""
         self.init_logging(logfile)
         key = raw_input("Insert the key: ")  # TODO verify & hide the key
         self.database_manager = database_manager.DatabaseManager(key)
         self.camera_manager = camera_manager.CameraManager(self)
-        self.telegram_manager = TelegramManager.telegram_manager.TelegramManager(self)
+        self.telegram_manager = telegram_manager.TelegramManager(self)
         self.control_panel = control_panel.ControlPanel(self)
         self.remote_devices = None
         self.data_mining = None
