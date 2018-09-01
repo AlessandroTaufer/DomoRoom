@@ -20,7 +20,7 @@ class CameraManager:
         self.motion_threshold = 3000  # Minimum distance between images to trigger the motion detection
         self.motion_sleep = 2  # Interval (in seconds) between two motion detection shots
         self.motion_refresh_frequency = 4  # How many shots to refresh the first capture
-        self.add_cam(0)  # Attach the default camera
+        self.add_cam(0)  # Attach the default camera  TODO find a better way to initialize camera manager
         self.last_shot = None  # Last captured shot
         Thread(target=self.acquire_shot, args=[self.cameras[0]]).start()  # TODO manage multi camera option
 
@@ -53,9 +53,9 @@ class CameraManager:
     def shot(self, index=0):  # Shot a photo with the selected camera
         if 0 <= index < len(self.cameras):
             try:
-                return self.cameras[index].capture_image()
+                return self.cameras[index].capture_image()  # TODO why not last shot?
             except:
-                self.logger.warning("An error occurred while taking a photo, cam: " + self.cameras[index])
+                self.logger.warning("An error occurred while taking a photo, cam: " + str(self.cameras[index]))
         return None
 
     def turn_on_motion_detection(self):  # Turn on the motion detection
@@ -116,7 +116,7 @@ class Camera:
         if not self.cam.isOpened():
             raise cv2.error
 
-    def capture_image(self):  # Shot a photo
+    def capture_image(self):  # Shot a photo  TODO addtime parameter
         ret, frame = self.cam.read()
         return frame
 

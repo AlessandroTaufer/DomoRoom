@@ -4,17 +4,18 @@
 #   Url: https://github.com/AlessandroTaufer
 #
 import logging
+import os.path
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from collections import OrderedDict
 
 
 class DatabaseManager:
+    file_names = {"telegram": "telegram.dr", "log": "log.dr", "keywords": "keywords.txt"}  # Database file name
+    file_path = "../resources/files/"  # Files path
 
     def __init__(self, key):
         self.logger = logging.getLogger("DomoRoom-database_manager")  # Default logger
-        self.file_path = "../resources/files/"
-        self.file_names = {"telegram": "telegram.dr", "log": "log.dr", "keywords": "keywords.txt"}  # Database file name
         self.key = SHA256.new(key).hexdigest()[:32]  # Encryption key
         self.filler_character = '~'  # Added at the end of the string
         self.logger.info("Successful initialized database manager")
@@ -107,9 +108,17 @@ class DatabaseManager:
         self.logger.info("Successfully loaded keywords from file")
         return dictionary
 
+    @staticmethod
+    def file_exist(file_name):  # Return true if the given file exists
+        if file_name in DatabaseManager.file_names.keys():
+            file_name = DatabaseManager.file_path + DatabaseManager.file_names[file_name]
+        else:
+            logging.warning("File name is not in the class dictionary")
+        return os.path.isfile(file_name)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    manager = DatabaseManager("database_key")
+    manager = DatabaseManager("key").file_exist("telegram")
 
 

@@ -11,7 +11,6 @@ import routines
 import camera_manager
 
 
-# TODO method to init the domoRoom at the first access
 # TODO manage random errors (404)
 # TODO manage .dr and pyc
 
@@ -22,6 +21,11 @@ class Kernel:
         if verbose:
             logfile = ""
         self.init_logging(logfile)
+        self.logger = logging.getLogger("DomoRoom-kernel")  # Default logger
+        if not database_manager.DatabaseManager.file_exist("telegram"):
+            self.logger.warning("Resources not found, initializing 'first access setup'")
+            control_panel.ControlPanel.first_access_setup()
+
         key = raw_input("Insert the key: ")  # TODO verify & hide the key
         self.database_manager = database_manager.DatabaseManager(key)
         self.camera_manager = camera_manager.CameraManager(self)

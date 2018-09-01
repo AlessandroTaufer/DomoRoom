@@ -22,7 +22,8 @@ class ControlPanel:
         self.logger.info("Enabled control panel")
 
     @staticmethod
-    def first_start_setup():  # Setup initial configuration
+    def first_access_setup():  # Setup initial configuration
+        print("DomoRoom - Initial configurations...\n\n")
         print("\nInsert the database encryption key")
         while True:
             key = getpass.getpass("Key: ")
@@ -222,4 +223,4 @@ class ControlPanel:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ControlPanel.first_start_setup()
+    ControlPanel.first_access_setup()
