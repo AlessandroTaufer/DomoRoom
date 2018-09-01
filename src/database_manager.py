@@ -5,6 +5,7 @@
 #
 import logging
 import os.path
+import pickle
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from collections import OrderedDict
@@ -48,10 +49,7 @@ class DatabaseManager:
         return txt[:counter+1]
 
     def write(self, file_name, data, encrypted=True, mode="w"):  # Write data in a file
-        if file_name in self.file_names.keys():
-            file_name = self.file_path + self.file_names[file_name]
-        else:
-            self.logger.warning("File name is not in the class dictionary")
+        file_name = DatabaseManager.generate_filename(file_name)
         if encrypted:
             data = self.encrypt(data)
 
@@ -59,10 +57,7 @@ class DatabaseManager:
             f.write(data)
 
     def read(self, file_name, decrypt=True):  # Get data from a file
-        if file_name in self.file_names.keys():
-            file_name = self.file_path + self.file_names[file_name]
-        else:
-            self.logger.warning("File name is not in the class dictionary")
+        file_name = DatabaseManager.generate_filename(file_name)
         data = ""
         with open(file_name, "r") as f:
             data = f.read()
@@ -109,16 +104,39 @@ class DatabaseManager:
         return dictionary
 
     @staticmethod
-    def file_exist(file_name):  # Return true if the given file exists
+    def generate_filename(file_name):  # Autocomplete the filename if it's in the file_names list
         if file_name in DatabaseManager.file_names.keys():
             file_name = DatabaseManager.file_path + DatabaseManager.file_names[file_name]
         else:
             logging.warning("File name is not in the class dictionary")
+        return file_name
+
+    # TODO encrypt pickle objects
+    # TODO debug pickle methods
+    @staticmethod
+    def save_object(file_name, obj):  # Save the given objects on file (overwrites the file)
+        file_name = DatabaseManager.generate_filename(file_name)
+        with open(file_name, 'wb') as output:
+            pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def load_object(file_name):  # Load all the objects from a file
+        file_name = DatabaseManager.generate_filename(file_name)
+        with open(file_name, 'rb') as input:
+            objs = []
+            while True:
+                try:
+                    objs.append(pickle.load(input))
+                except EOFError:
+                    break
+        return objs
+
+    @staticmethod
+    def file_exist(file_name):  # Return true if the given file exists
+        file_name = DatabaseManager.generate_filename(file_name)
         return os.path.isfile(file_name)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     manager = DatabaseManager("key").file_exist("telegram")
-
-
