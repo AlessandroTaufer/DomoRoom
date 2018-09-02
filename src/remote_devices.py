@@ -46,19 +46,52 @@ class Device:
 class EspEasyDevice(Device):  # Interface with an Esp Easy module
     def __init__(self, ip_address):
         Device.__init__(self, ip_address, None)
-        self.url = "http://" + ip_address + "/control?cmd=event,"
+        self.url = "http://" + ip_address + "/control?cmd="
 
-    # TODO check if send_signal is working
-    def send_signal(self, pin, status):  # Set the remote pin at the status level
+    def gpio_write(self, pin, status, duration=0):  # Set the remote pin at the status level
+        if isinstance(pin, basestring) and pin.find("D"):
+            pin = self.digital_to_gpio(pin)
         status = int(status)
-        command = "A" + str(pin) + str(status)
+        command = "GPIO,"
+        command += str(pin) + "," + str(status)
+        if status > 1:
+            command = command.replace("GPIO", "PWM")
+            command += "," + str(duration)
+        return self.send_command(command)
+
+    def send_command(self, command):  # Send a command to the remote device
         try:
             r = requests.post(self.url+command)
             if r.status_code == 200:
                 return True
         except:
-            pass
-        return False
+            return False
+
+    @staticmethod
+    def digital_to_gpio(digital_pin):  # Convert a digital pin to GPIO
+        # Based on https://www.letscontrolit.com/wiki/index.php/Configuration
+        if isinstance(digital_pin, basestring):
+            digital_pin = digital_pin.replace("D", "")
+            digital_pin = int(digital_pin)
+        if digital_pin == 0:
+            return 16
+        elif digital_pin == 3:
+            return 0
+        elif digital_pin == 4:
+            return 2
+        elif digital_pin == 5:
+            return 14
+        elif digital_pin == 6:
+            return 12
+        elif digital_pin == 7:
+            return 13
+        elif digital_pin == 8:
+            return 15
+        elif digital_pin == 11:
+            return 9
+        elif digital_pin == 12:
+            return 10
+        return digital_pin
 
 
 class Sensor(Device):
@@ -78,7 +111,7 @@ class Sensor(Device):
 
 if __name__ == "__main__":
     while True:
-        EspEasyDevice("192.168.1.200").send_signal(1, False)
-        time.sleep(0.3)
-        EspEasyDevice("192.168.1.200").send_signal(1, True)
-        time.sleep(0.3)
+        EspEasyDevice("192.168.1.200").gpio_write(12, 0, 1000)
+        time.sleep(1)
+        EspEasyDevice("192.168.1.200").gpio_write(12, 1024, 1000)
+        time.sleep(1)
