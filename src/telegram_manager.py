@@ -134,7 +134,7 @@ class TelegramManager:
             logging.warning("Failed to remove chat: invalid parameter " + str(pos))
         return False
 
-    def save_data(self):  # Save the data on file
+    def save_data(self):  # Save the data on file  # TODO save telegram data by pickle
         chats = ""
         for c in self.allowed_chats:
             chats += str(c) + ","

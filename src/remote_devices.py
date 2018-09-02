@@ -5,12 +5,14 @@
 #
 import logging
 import requests
-import time # TODO check if import time is useless
+import database_manager
+import time  # TODO check if import time is useless
 
 
 class RemoteDevices:
     # TODO RemoteDevices needs implementation
-    def __init__(self):
+    def __init__(self, parent):
+        self.parent = parent
         self.logger = logging.getLogger("DomoRoom-RemoteDevices")
         self.devices = []
 
@@ -23,7 +25,7 @@ class RemoteDevices:
 
     def del_device(self, device):  # Remove a device from the device list
         if device in self.devices:
-            del self.devices[self.devices.index(device,0,len(self.devices))]
+            del self.devices[self.devices.index(device,0 ,len(self.devices))]
             return True
         self.logger.warning("Deleting an invalid device ")
         return False
@@ -32,10 +34,24 @@ class RemoteDevices:
         if pos >= 0 < len(self.devices):
             return self.devices[pos]
 
+    def backup_devices(self, filename="devices"):  # Save all the devices on file
+        self.logger.debug("Saving devices on file: " + filename)
+        database_manager.DatabaseManager.save_object(filename, self.devices)
+        self.logger.info("Devices saved on file: " + filename)
+
+    def load_devices(self, filename="devices"):  # Load devices from a previous backup
+        if database_manager.DatabaseManager.file_exist(filename):
+            self.devices = self.devices + database_manager.DatabaseManager.load_object(filename)[0]
+            self.logger.info("Successfully loaded devices from file: " + filename)
+            return True
+        else:
+            self.logger.warning("Devices backup file not found")
+
 
 class Device:
     # TODO Device needs implementation
-    def __init__(self, ip_address, port):
+    def __init__(self, name, ip_address, port):
+        self.name = name
         self.ip_address = ip_address
         self.port = port
 
@@ -44,12 +60,12 @@ class Device:
 
 
 class EspEasyDevice(Device):  # Interface with an Esp Easy module
-    def __init__(self, ip_address):
-        Device.__init__(self, ip_address, None)
+    def __init__(self, name,ip_address):
+        Device.__init__(self, name, ip_address, None)
         self.url = "http://" + ip_address + "/control?cmd="
 
     def gpio_write(self, pin, status, duration=0):  # Set the remote pin at the status level
-        if isinstance(pin, basestring) and pin.find("D"):
+        if isinstance(pin, basestring):
             pin = self.digital_to_gpio(pin)
         status = int(status)
         command = "GPIO,"
@@ -110,8 +126,11 @@ class Sensor(Device):
 
 
 if __name__ == "__main__":
-    while True:
-        EspEasyDevice("192.168.1.200").gpio_write(12, 0, 1000)
-        time.sleep(1)
-        EspEasyDevice("192.168.1.200").gpio_write(12, 1024, 1000)
-        time.sleep(1)
+    # while True:
+
+    manager = RemoteDevices(None)
+    manager.load_devices()
+    # manager.add_device(dev)
+    print("Devices: " + str(manager.devices))
+    manager.get_device(0).gpio_write("D5", 700)
+    manager.backup_devices()

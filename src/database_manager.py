@@ -12,7 +12,8 @@ from collections import OrderedDict
 
 
 class DatabaseManager:
-    file_names = {"telegram": "telegram.dr", "log": "log.dr", "keywords": "keywords.txt"}  # Database file name
+    file_names = {"telegram": "telegram.dr", "log": "log.dr", "keywords": "keywords.txt",
+                  "devices": "devices.dr"}  # Database file name
     file_path = "../resources/files/"  # Files path
 
     def __init__(self, key):

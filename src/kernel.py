@@ -9,6 +9,7 @@ import database_manager
 import control_panel
 import routines
 import camera_manager
+import remote_devices
 
 
 # TODO manage random errors (404)
@@ -31,7 +32,7 @@ class Kernel:
         self.camera_manager = camera_manager.CameraManager(self)
         self.telegram_manager = telegram_manager.TelegramManager(self)
         self.control_panel = control_panel.ControlPanel(self)
-        self.remote_devices = None
+        self.remote_devices = remote_devices.RemoteDevices(self)
         self.data_mining = None
         self.integrity_system = None
         self.routines = routines.RoutinesManager(self)

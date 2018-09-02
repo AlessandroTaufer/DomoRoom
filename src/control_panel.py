@@ -8,6 +8,7 @@ import getpass
 import database_manager
 import sys
 import select
+import remote_devices
 from routines import RoutinesManager
 from threading import Thread
 
@@ -209,6 +210,11 @@ class ControlPanel:
 
     def get_help(self):  # Returns a string containing all the commands
         return "\n".join([e.get("name") + " - " + e.get("description") for e in self.keywords.values()])
+
+    def add_device(self, command):  # Add a remote device
+        # TODO add device needs implementation
+        device = None
+        self.parent.remote_devices.add_device(device)
 
     def shut_down(self):  # Shut down the whole program
         self.backup()
