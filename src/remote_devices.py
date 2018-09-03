@@ -15,6 +15,11 @@ class RemoteDevices:
         self.parent = parent
         self.logger = logging.getLogger("DomoRoom-RemoteDevices")
         self.devices = []
+        self.load_devices()
+
+    def __del__(self):
+        # TODO warn devices that the core is shutting down
+        self.backup_devices()
 
     def add_device(self, device):  # Add a device to the device list
         if device is not None and device not in self.devices:
@@ -24,8 +29,11 @@ class RemoteDevices:
         return False
 
     def del_device(self, device):  # Remove a device from the device list
-        if device in self.devices:
-            del self.devices[self.devices.index(device,0 ,len(self.devices))]
+        if isinstance(device, int):
+            self.devices.pop(device)
+            return True
+        elif device in self.devices:
+            del self.devices[self.devices.index(device, 0, len(self.devices))] # TODO check if del device works
             return True
         self.logger.warning("Deleting an invalid device ")
         return False
@@ -46,6 +54,7 @@ class RemoteDevices:
             return True
         else:
             self.logger.warning("Devices backup file not found")
+        return False
 
 
 class Device:

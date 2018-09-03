@@ -87,6 +87,14 @@ class ControlPanel:
             self.reply_to(source, self.capture_image(command))
         elif keyword == self.keywords.get("security_system").get("name"):
             self.reply_to(source, self.security_system(command))
+        elif keyword == self.keywords.get("add_device").get("name"):
+            self.add_esp_device(command)
+            self.reply_to(source, "Device plugged to the kernel")  # TODO check if add_esp_device worked
+        elif keyword == self.keywords.get("list_devices").get("name"):
+            self.reply_to(source, "Device list: " + str(self.parent.remote_devices.devices))
+        elif keyword == self.keywords.get("remove_device").get("name"):
+            self.remove_esp_device(command)
+            self.reply_to(source, "Device plugged to the kernel")  # TODO check if remove_esp_device worked
         elif keyword == self.keywords.get("power_off").get("name"):
             self.parent.telegram_manager.broadcast_message("Bot is now offline")
             self.shut_down()
@@ -211,10 +219,28 @@ class ControlPanel:
     def get_help(self):  # Returns a string containing all the commands
         return "\n".join([e.get("name") + " - " + e.get("description") for e in self.keywords.values()])
 
-    def add_device(self, command):  # Add a remote device
-        # TODO add device needs implementation
-        device = None
+    def add_esp_device(self, command):  # Add a remote device
+        if len(command) > 1:
+            name = command.pop(0)
+            ip = command.pop(0)
+        else:
+            print("Insert the device name: ")
+            name = self.console_input()
+            print("Insert the device ip (format x.x.x.x)")
+            ip = self.console_input()
+        device = remote_devices.EspEasyDevice(name, ip)
         self.parent.remote_devices.add_device(device)
+
+    def remove_esp_device(self, command):  # Remove a remote device
+        if len(command) > 0:
+            pos = command.pop(0)
+        else:
+            print("Insert the device position/id to remove: ")
+            pos = self.console_input()
+        if self.parent.remote_devices.del_device(pos):
+            return "Successfully removed the device"
+        else:
+            return "Invalid value"
 
     def shut_down(self):  # Shut down the whole program
         self.backup()
@@ -223,6 +249,7 @@ class ControlPanel:
         self.parent.routines.enabled = False
         self.parent.camera_manager.enabled = False
         self.parent.camera_manager.turn_off_motion_detection()
+        self.parent.remote_devices.__del__()
         self.logger.info("Exiting program")
         self.parent.__del__()
 

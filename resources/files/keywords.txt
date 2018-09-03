@@ -6,4 +6,7 @@ telegram_reminder, reminder, Send a telegram message at a specified time
 list_routines, routines, List all the current routines
 capture_image, shot, Shot a photo of the room and send it to the selected telegram chat
 security_system, security, Motion detection
+add_device, device, Add a remote device
+list_devices, devicelist, List all the current attached devices
+remove_device, unplug, Remove a remote device
 power_off, poweroff, Exit program
